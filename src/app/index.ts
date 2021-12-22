@@ -1,9 +1,8 @@
 import * as Generator from 'yeoman-generator';
-import { AppAnswers } from './app-answers';
+import { BaseGenerator } from '../base-generator';
+import { AppAnswers, Framework, PackageManager } from './app-answers';
 
-module.exports = class extends Generator {
-  public answers: AppAnswers = {} as AppAnswers;
-
+module.exports = class extends BaseGenerator {
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
 
@@ -42,19 +41,22 @@ module.exports = class extends Generator {
         default: this.options['framework'],
         when: !['angular'].includes(this.options['framework']),
       },
+      {
+        type: 'input',
+        name: 'projectName',
+        message: 'Please type project name',
+        default: 'project-starter',
+        when: !this.options['projectName'],
+      },
     ])) as AppAnswers;
 
-    this.answers = Object.assign(
-      {
-        packageManager: this.options['packageManager'] as string,
-        framework: this.options['framework'] as string,
-      },
-      answers,
-    );
+    this.packageManager = (this.options['packageManager'] as PackageManager) || answers.packageManager;
+    this.framework = (this.options['framework'] as Framework) || answers.framework;
+    this.projectName = (this.options['projectName'] as string) || answers.projectName;
   }
 
   start(): void {
-    if (this.answers.framework === 'angular') {
+    if (this.framework === 'angular') {
       this.composeWith('codingsans-cli:angular');
     }
   }

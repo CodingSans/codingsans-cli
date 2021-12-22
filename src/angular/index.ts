@@ -1,6 +1,5 @@
 import * as Generator from 'yeoman-generator';
-import { AppAnswers } from '../app/app-answers';
-import { extendJson, install, uninstall } from '../utils';
+import { BaseGenerator } from '../base-generator';
 import { AngularAnswers, AngularFeature } from './angular-answers';
 
 const hasFeatureFactory =
@@ -8,25 +7,23 @@ const hasFeatureFactory =
   (feature: AngularFeature): boolean =>
     features.includes(feature);
 
-module.exports = class extends Generator {
-  rootAnswers: AppAnswers = {} as AppAnswers;
+module.exports = class extends BaseGenerator {
   answers: AngularAnswers = {} as AngularAnswers;
   hasFeature: (feature: AngularFeature) => boolean = () => false;
 
+  constructor(args: string | string[], opts: Generator.GeneratorOptions) {
+    super(args, opts);
+
+    const root = this.env.rootGenerator() as BaseGenerator;
+    this.copyOptionsFromRoot(root);
+  }
+
   initializing(): void {
     this.log('Generating Angular application');
-    const root = this.env.rootGenerator() as unknown as { answers: AppAnswers };
-    this.rootAnswers = root.answers;
   }
 
   async prompting(): Promise<void> {
     this.answers = (await this.prompt([
-      {
-        type: 'input',
-        name: 'projectName',
-        message: 'Please type project name',
-        default: 'angular-starter',
-      },
       {
         type: 'checkbox',
         name: 'features',
@@ -65,8 +62,8 @@ module.exports = class extends Generator {
     this.spawnCommandSync('npx', [
       '@angular/cli',
       'new',
-      this.answers.projectName,
-      `--packageManager=${this.rootAnswers.packageManager}`,
+      this.projectName,
+      `--packageManager=${this.packageManager}`,
       '--routing',
       '--strict',
       '--style=scss',
@@ -75,8 +72,7 @@ module.exports = class extends Generator {
     const templatePath = this.templatePath('../../../templates/angular');
 
     if (this.hasFeature('eslint')) {
-      await install(
-        this,
+      await this.install(
         [
           {
             eslint: '7',
@@ -87,30 +83,30 @@ module.exports = class extends Generator {
       );
 
       this.spawnCommandSync('yarn', ['ng', 'add', '@angular-eslint/schematics', '--skip-confirmation'], {
-        cwd: this.answers.projectName,
+        cwd: this.projectName,
       });
 
       if (this.hasFeature('codingsans-eslint')) {
-        await extendJson(this, `${this.answers.projectName}/.eslintrc.json`, {
+        await this.extendJson(`${this.projectName}/.eslintrc.json`, {
           overrides: [{ extends: ['@codingsans/eslint-config/typescript-recommended'] }],
         });
       }
     }
 
     if (this.hasFeature('prettier')) {
-      await install(this, ['prettier'], true);
+      await this.install(['prettier'], true);
 
       if (this.hasFeature('prettier-vscode')) {
         this.copyTemplate(
           `${templatePath}/settings.json`,
-          this.destinationPath(`${this.answers.projectName}/.vscode/settings.json`),
+          this.destinationPath(`${this.projectName}/.vscode/settings.json`),
         );
       }
     }
 
     if (this.hasFeature('jest')) {
-      await install(this, ['jest', '@types/jest', 'jest-preset-angular'], true);
-      await uninstall(this, [
+      await this.install(['jest', '@types/jest', 'jest-preset-angular'], true);
+      await this.uninstall([
         'jasmine-core',
         '@types/jasmine',
         'karma',
@@ -120,48 +116,38 @@ module.exports = class extends Generator {
         'karma-jasmine-html-reporter',
       ]);
 
-      this.copyTemplate(
-        `${templatePath}/setup-jest.ts`,
-        this.destinationPath(`${this.answers.projectName}/setup-jest.ts`),
-      );
-      this.copyTemplate(
-        `${templatePath}/jest.config.js`,
-        this.destinationPath(`${this.answers.projectName}/jest.config.js`),
-      );
+      this.copyTemplate(`${templatePath}/setup-jest.ts`, this.destinationPath(`${this.projectName}/setup-jest.ts`));
+      this.copyTemplate(`${templatePath}/jest.config.js`, this.destinationPath(`${this.projectName}/jest.config.js`));
 
-      const karmaConfPath = this.destinationPath(`${this.answers.projectName}/karma.conf.js`);
+      const karmaConfPath = this.destinationPath(`${this.projectName}/karma.conf.js`);
       this.deleteDestination(karmaConfPath);
-      const karmaInitPath = this.destinationPath(`${this.answers.projectName}/src/test.ts`);
+      const karmaInitPath = this.destinationPath(`${this.projectName}/src/test.ts`);
       this.deleteDestination(karmaInitPath);
 
-      await extendJson(this, `${this.answers.projectName}/tsconfig.spec.json`, {
+      await this.extendJson(`${this.projectName}/tsconfig.spec.json`, {
         compilerOptions: { types: ['jest'], esModuleInterop: true },
         files: [],
       });
 
-      await extendJson(this, `${this.answers.projectName}/package.json`, {
+      await this.extendJson(`${this.projectName}/package.json`, {
         scripts: { test: 'jest' },
       });
     }
 
     if (this.hasFeature('stryker')) {
-      await install(
-        this,
+      await this.install(
         ['@stryker-mutator/core', '@stryker-mutator/jest-runner', '@stryker-mutator/typescript-checker'],
         true,
       );
 
       this.copyTemplate(
         `${templatePath}/tsconfig.stryker.json`,
-        this.destinationPath(`${this.answers.projectName}/tsconfig.stryker.json`),
+        this.destinationPath(`${this.projectName}/tsconfig.stryker.json`),
       );
 
-      this.copyTemplate(
-        `${templatePath}/stryker.conf.js`,
-        this.destinationPath(`${this.answers.projectName}/stryker.conf.js`),
-      );
+      this.copyTemplate(`${templatePath}/stryker.conf.js`, this.destinationPath(`${this.projectName}/stryker.conf.js`));
 
-      await extendJson(this, `${this.answers.projectName}/package.json`, {
+      await this.extendJson(`${this.projectName}/package.json`, {
         scripts: { stryker: 'stryker run' },
       });
     }

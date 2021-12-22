@@ -1,4 +1,8 @@
+export type PackageManager = 'yarn' | 'npm';
+export type Framework = 'angular';
+
 export type AppAnswers = {
-  framework: string;
-  packageManager: string;
+  packageManager: PackageManager;
+  framework: Framework;
+  projectName: string;
 };
