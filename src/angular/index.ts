@@ -10,6 +10,7 @@ const hasFeatureFactory =
 module.exports = class extends BaseGenerator {
   answers: AngularAnswers = {} as AngularAnswers;
   hasFeature: (feature: AngularFeature) => boolean = () => false;
+  templateFolder = '';
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
@@ -51,14 +52,16 @@ module.exports = class extends BaseGenerator {
           },
           { name: 'Jest Unit test runner', value: 'jest', checked: true },
           { name: 'Stryker Mutation test runner', value: 'stryker', checked: true },
+          { name: 'Angular SSR /w express.js', value: 'ssr', checked: false },
         ],
       },
     ])) as AngularAnswers;
 
     this.hasFeature = hasFeatureFactory(this.answers.features);
+    this.templateFolder = this.templatePath('../../../templates/angular');
   }
 
-  async writing(): Promise<void> {
+  async installPackages(): Promise<void> {
     this.spawnCommandSync('npx', [
       '@angular/cli',
       'new',
@@ -68,8 +71,6 @@ module.exports = class extends BaseGenerator {
       '--strict',
       '--style=scss',
     ]);
-
-    const templatePath = this.templatePath('../../../templates/angular');
 
     if (this.hasFeature('eslint')) {
       await this.install(
@@ -85,23 +86,10 @@ module.exports = class extends BaseGenerator {
       this.spawnCommandSync('yarn', ['ng', 'add', '@angular-eslint/schematics', '--skip-confirmation'], {
         cwd: this.projectName,
       });
-
-      if (this.hasFeature('codingsans-eslint')) {
-        await this.extendJson(`${this.projectName}/.eslintrc.json`, {
-          overrides: [{ extends: ['@codingsans/eslint-config/typescript-recommended'] }],
-        });
-      }
     }
 
     if (this.hasFeature('prettier')) {
       await this.install(['prettier'], true);
-
-      if (this.hasFeature('prettier-vscode')) {
-        this.copyTemplate(
-          `${templatePath}/settings.json`,
-          this.destinationPath(`${this.projectName}/.vscode/settings.json`),
-        );
-      }
     }
 
     if (this.hasFeature('jest')) {
@@ -115,9 +103,49 @@ module.exports = class extends BaseGenerator {
         'karma-jasmine',
         'karma-jasmine-html-reporter',
       ]);
+    }
 
-      this.copyTemplate(`${templatePath}/setup-jest.ts`, this.destinationPath(`${this.projectName}/setup-jest.ts`));
-      this.copyTemplate(`${templatePath}/jest.config.js`, this.destinationPath(`${this.projectName}/jest.config.js`));
+    if (this.hasFeature('stryker')) {
+      await this.install(
+        ['@stryker-mutator/core', '@stryker-mutator/jest-runner', '@stryker-mutator/typescript-checker'],
+        true,
+      );
+    }
+
+    if (this.hasFeature('ssr')) {
+      this.spawnCommandSync('yarn', ['ng', 'add', '@nguniversal/express-engine', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+    }
+  }
+
+  async writing(): Promise<void> {
+    if (this.hasFeature('eslint')) {
+      if (this.hasFeature('codingsans-eslint')) {
+        await this.extendJson(`${this.projectName}/.eslintrc.json`, {
+          overrides: [{ extends: ['@codingsans/eslint-config/typescript-recommended'] }],
+        });
+      }
+    }
+
+    if (this.hasFeature('prettier')) {
+      if (this.hasFeature('prettier-vscode')) {
+        this.copyTemplate(
+          `${this.templateFolder}/settings.json`,
+          this.destinationPath(`${this.projectName}/.vscode/settings.json`),
+        );
+      }
+    }
+
+    if (this.hasFeature('jest')) {
+      this.copyTemplate(
+        `${this.templateFolder}/setup-jest.ts`,
+        this.destinationPath(`${this.projectName}/setup-jest.ts`),
+      );
+      this.copyTemplate(
+        `${this.templateFolder}/jest.config.js`,
+        this.destinationPath(`${this.projectName}/jest.config.js`),
+      );
 
       const karmaConfPath = this.destinationPath(`${this.projectName}/karma.conf.js`);
       this.deleteDestination(karmaConfPath);
@@ -135,17 +163,15 @@ module.exports = class extends BaseGenerator {
     }
 
     if (this.hasFeature('stryker')) {
-      await this.install(
-        ['@stryker-mutator/core', '@stryker-mutator/jest-runner', '@stryker-mutator/typescript-checker'],
-        true,
-      );
-
       this.copyTemplate(
-        `${templatePath}/tsconfig.stryker.json`,
+        `${this.templateFolder}/tsconfig.stryker.json`,
         this.destinationPath(`${this.projectName}/tsconfig.stryker.json`),
       );
 
-      this.copyTemplate(`${templatePath}/stryker.conf.js`, this.destinationPath(`${this.projectName}/stryker.conf.js`));
+      this.copyTemplate(
+        `${this.templateFolder}/stryker.conf.js`,
+        this.destinationPath(`${this.projectName}/stryker.conf.js`),
+      );
 
       await this.extendJson(`${this.projectName}/package.json`, {
         scripts: { stryker: 'stryker run' },
