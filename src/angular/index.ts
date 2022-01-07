@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import * as Generator from 'yeoman-generator';
 import { BaseGenerator } from '../base-generator';
 import { AngularAnswers, AngularFeature } from './angular-answers';
@@ -62,6 +63,9 @@ module.exports = class extends BaseGenerator {
   }
 
   async installPackages(): Promise<void> {
+    const absolutePath = this.destinationPath(`${this.projectName}/yarn.lock`);
+    const isYarn = existsSync(absolutePath);
+    const runnerCommand = isYarn ? 'yarn' : 'npx';
     this.spawnCommandSync('npx', [
       '@angular/cli',
       'new',
@@ -83,7 +87,7 @@ module.exports = class extends BaseGenerator {
         true,
       );
 
-      this.spawnCommandSync('yarn', ['ng', 'add', '@angular-eslint/schematics', '--skip-confirmation'], {
+      this.spawnCommandSync(runnerCommand, ['ng', 'add', '@angular-eslint/schematics', '--skip-confirmation'], {
         cwd: this.projectName,
       });
     }
@@ -113,7 +117,7 @@ module.exports = class extends BaseGenerator {
     }
 
     if (this.hasFeature('ssr')) {
-      this.spawnCommandSync('yarn', ['ng', 'add', '@nguniversal/express-engine', '--skip-confirmation'], {
+      this.spawnCommandSync(runnerCommand, ['ng', 'add', '@nguniversal/express-engine', '--skip-confirmation'], {
         cwd: this.projectName,
       });
     }
