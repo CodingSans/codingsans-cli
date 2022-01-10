@@ -1,15 +1,22 @@
 import * as Generator from 'yeoman-generator';
 import { BaseGenerator } from '../base-generator';
-import { AngularAnswers, AngularFeature } from './angular-answers';
+import {
+  AngularAnswers,
+  AngularFeature,
+  AngularStateManagement,
+  AngularStateManagementAnswers,
+} from './angular-answers';
 
 const hasFeatureFactory =
   (features: AngularFeature[]): ((feature: AngularFeature) => boolean) =>
   (feature: AngularFeature): boolean =>
     features.includes(feature);
-
 module.exports = class extends BaseGenerator {
   answers: AngularAnswers = {} as AngularAnswers;
+  stateAnswers: AngularStateManagementAnswers = {} as AngularStateManagementAnswers;
+
   hasFeature: (feature: AngularFeature) => boolean = () => false;
+  isStateFeature: (feature: AngularStateManagement) => boolean = () => false;
   templateFolder = '';
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
@@ -52,12 +59,40 @@ module.exports = class extends BaseGenerator {
           },
           { name: 'Jest Unit test runner', value: 'jest', checked: true },
           { name: 'Stryker Mutation test runner', value: 'stryker', checked: true },
+          { name: 'State-management', value: 'state-management', checked: false },
           { name: 'Angular SSR /w express.js', value: 'ssr', checked: false },
         ],
       },
     ])) as AngularAnswers;
 
     this.hasFeature = hasFeatureFactory(this.answers.features);
+
+    if (this.hasFeature('state-management')) {
+      this.stateAnswers = (await this.prompt([
+        {
+          type: 'list',
+          name: 'stateManagement',
+          message: 'Which state-management lib do you want to include?',
+          choices: [
+            {
+              name: 'NGRX',
+              value: 'ngrx',
+            },
+            {
+              name: 'NGXS',
+              value: 'ngxs',
+            },
+            {
+              name: 'Akita',
+              value: 'akita',
+            },
+          ],
+        },
+      ])) as AngularStateManagementAnswers;
+    }
+
+    this.isStateFeature = (stateManagement) => this.stateAnswers.stateManagement === stateManagement;
+
     this.templateFolder = this.templatePath('../../../templates/angular');
   }
 
@@ -116,6 +151,32 @@ module.exports = class extends BaseGenerator {
       this.spawnCommandSync('npx', ['ng', 'add', '@nguniversal/express-engine', '--skip-confirmation'], {
         cwd: this.projectName,
       });
+    }
+
+    if (this.isStateFeature('ngrx')) {
+      this.spawnCommandSync('npx', ['ng', 'add', '@ngrx/store', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+      this.spawnCommandSync('npx', ['ng', 'add', '@ngrx/store-devtools', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+      this.spawnCommandSync('npx', ['ng', 'add', '@ngrx/effects', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+    }
+
+    if (this.isStateFeature('ngxs')) {
+      this.spawnCommandSync('npx', ['ng', 'add', '@ngxs/store', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+      this.spawnCommandSync('npx', ['ng', 'add', '@ngxs/devtools-plugin', '--skip-confirmation'], {
+        cwd: this.projectName,
+      });
+    }
+
+    if (this.isStateFeature('akita')) {
+      await this.install(['@datorama/akita'], false);
+      await this.install(['@datorama/akita-ngdevtools'], false);
     }
   }
 
