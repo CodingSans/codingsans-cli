@@ -5,8 +5,13 @@ export type AngularFeature =
   | 'prettier-vscode'
   | 'jest'
   | 'stryker'
-  | 'ssr';
+  | 'ssr'
+  | 'state-management';
 
 export type AngularAnswers = {
   features: AngularFeature[];
 };
+
+export type AngularStateManagement = 'ngrx' | 'ngxs' | 'akita';
+
+export type AngularStateManagementAnswers = { stateManagement: AngularStateManagement };
