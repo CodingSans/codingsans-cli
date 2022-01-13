@@ -18,6 +18,7 @@ module.exports = class extends BaseGenerator {
   hasFeature: (feature: AngularFeature) => boolean = () => false;
   isStateFeature: (feature: AngularStateManagement) => boolean = () => false;
   templateFolder = '';
+  commonTemplateFolder = '';
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
@@ -94,6 +95,7 @@ module.exports = class extends BaseGenerator {
     this.isStateFeature = (stateManagement) => this.stateAnswers.stateManagement === stateManagement;
 
     this.templateFolder = this.templatePath('../../../templates/angular');
+    this.commonTemplateFolder = this.templatePath('../../../templates/common');
   }
 
   async installPackages(): Promise<void> {
@@ -192,7 +194,7 @@ module.exports = class extends BaseGenerator {
     if (this.hasFeature('prettier')) {
       if (this.hasFeature('prettier-vscode')) {
         this.copyTemplate(
-          `${this.templateFolder}/settings.json`,
+          `${this.commonTemplateFolder}/settings.json`,
           this.destinationPath(`${this.projectName}/.vscode/settings.json`),
         );
       }
