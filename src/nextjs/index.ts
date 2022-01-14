@@ -87,6 +87,10 @@ module.exports = class extends BaseGenerator {
 
     if (this.hasFeature('prettier')) {
       this.copyTemplate(
+        `${this.commonTemplateFolder}/.prettierrc`,
+        this.destinationPath(`${this.projectName}/.prettierrc`),
+      );
+      this.copyTemplate(
         `${this.commonTemplateFolder}/settings.json`,
         this.destinationPath(`${this.projectName}/.vscode/settings.json`),
       );
