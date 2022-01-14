@@ -23,7 +23,7 @@ module.exports = class extends BaseGenerator {
   }
 
   initializing(): void {
-    this.log('Generating Angular application');
+    this.log('Generating NextJS application');
   }
 
   async prompting(): Promise<void> {
@@ -33,30 +33,10 @@ module.exports = class extends BaseGenerator {
         name: 'features',
         message: 'Which setups do you want to include?',
         choices: [
-          {
-            name: 'ESLint',
-            value: 'eslint',
-            checked: true,
-          },
-          {
-            name: 'CodingSans ESLint (only with ESLint)',
-            value: 'codingsans-eslint',
-            checked: true,
-          },
-          {
-            name: 'Prettier',
-            value: 'prettier',
-            checked: true,
-          },
-          {
-            name: 'Prettier VSCode settings (only with Prettier)',
-            value: 'prettier-vscode',
-            checked: true,
-          },
+          { name: 'ESLint', value: 'eslint', checked: true },
+          { name: 'Prettier', value: 'prettier', checked: true },
           { name: 'Jest Unit test runner', value: 'jest', checked: true },
           { name: 'Stryker Mutation test runner', value: 'stryker', checked: true },
-          { name: 'State-management', value: 'state-management', checked: false },
-          { name: 'Angular SSR /w express.js', value: 'ssr', checked: false },
         ],
       },
     ])) as ReactFeatures;
@@ -72,15 +52,7 @@ module.exports = class extends BaseGenerator {
 
     if (this.hasFeature('eslint')) {
       await this.uninstall(['eslint', 'eslint-config-next']);
-      await this.install(
-        [
-          {
-            eslint: '7',
-          },
-          '@codingsans/eslint-config',
-        ],
-        true,
-      );
+      await this.install([{ eslint: '7' }, '@codingsans/eslint-config'], true);
     }
 
     if (this.hasFeature('prettier')) {
@@ -108,20 +80,16 @@ module.exports = class extends BaseGenerator {
     await this.install(['typescript', '@types/react'], true);
 
     if (this.hasFeature('eslint')) {
-      if (this.hasFeature('codingsans-eslint')) {
-        await this.extendJson(`${this.projectName}/.eslintrc.json`, {
-          extends: ['@codingsans/eslint-config/typescript-recommended'],
-        });
-      }
+      await this.extendJson(`${this.projectName}/.eslintrc.json`, {
+        extends: ['@codingsans/eslint-config/typescript-recommended'],
+      });
     }
 
     if (this.hasFeature('prettier')) {
-      if (this.hasFeature('prettier-vscode')) {
-        this.copyTemplate(
-          `${this.commonTemplateFolder}/settings.json`,
-          this.destinationPath(`${this.projectName}/.vscode/settings.json`),
-        );
-      }
+      this.copyTemplate(
+        `${this.commonTemplateFolder}/settings.json`,
+        this.destinationPath(`${this.projectName}/.vscode/settings.json`),
+      );
     }
 
     if (this.hasFeature('jest')) {
