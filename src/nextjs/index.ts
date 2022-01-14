@@ -1,3 +1,5 @@
+import { ChildProcess } from 'child_process';
+import { AbortController } from 'node-abort-controller';
 import * as Generator from 'yeoman-generator';
 import { BaseGenerator } from '../base-generator';
 import { ReactFeature, ReactFeatures } from './nextjs-answers';
@@ -149,5 +151,18 @@ module.exports = class extends BaseGenerator {
         scripts: { stryker: 'stryker run' },
       });
     }
+  }
+
+  async end(): Promise<void> {
+    const abortController = new AbortController();
+    const asd = this.spawnCommand(this.packageManager, ['run', 'dev'], {
+      cwd: this.projectName,
+      signal: abortController.signal,
+    }) as ChildProcess;
+    asd.on('error', () => {
+      console.log(`Child process (${this.packageManager} run dev) aborted.`);
+    });
+    await new Promise((res) => setTimeout(res, 3000));
+    abortController.abort();
   }
 };
