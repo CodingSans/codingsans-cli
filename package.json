@@ -30,6 +30,7 @@
     "decomment": "^0.9.5",
     "lodash": "^4.17.21",
     "node-abort-controller": "^3.0.1",
+    "rimraf": "^3.0.2",
     "yeoman-generator": "^5.4.2"
   },
   "files": [

@@ -123,6 +123,10 @@ module.exports = class extends BaseGenerator {
         scripts: { stryker: 'stryker run' },
       });
     }
+
+    this.spawnCommandSync('npx', ['rimraf', `pages`], { cwd: this.projectName });
+
+    this.copyTemplate(`${this.templateFolder}/pages`, this.destinationPath(`${this.projectName}/pages`));
   }
 
   async end(): Promise<void> {
