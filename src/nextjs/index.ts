@@ -131,12 +131,12 @@ module.exports = class extends BaseGenerator {
 
   async end(): Promise<void> {
     const abortController = new AbortController();
-    const asd = this.spawnCommand(this.packageManager, ['run', 'dev'], {
+    const tsMigrator = this.spawnCommand(this.packageManager, ['run', 'dev'], {
       cwd: this.projectName,
       signal: abortController.signal,
     }) as ChildProcess;
-    asd.on('error', () => {
-      console.log(`Child process (${this.packageManager} run dev) aborted.`);
+    tsMigrator.on('error', () => {
+      console.log(`TS config initialized.`);
     });
     await new Promise((res) => setTimeout(res, 3000));
     abortController.abort();
