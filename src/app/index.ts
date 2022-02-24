@@ -36,10 +36,10 @@ module.exports = class extends BaseGenerator {
         type: 'list',
         name: 'framework',
         message: 'Select a framework you want to start.',
-        choices: ['angular'],
+        choices: ['angular', 'nextjs'],
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         default: this.options['framework'],
-        when: !['angular'].includes(this.options['framework']),
+        when: !['angular', 'nextjs'].includes(this.options['framework']),
       },
       {
         type: 'input',
@@ -58,6 +58,10 @@ module.exports = class extends BaseGenerator {
   start(): void {
     if (this.framework === 'angular') {
       this.composeWith('codingsans-cli:angular');
+    }
+
+    if (this.framework === 'nextjs') {
+      this.composeWith('codingsans-cli:nextjs');
     }
   }
 };

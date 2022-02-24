@@ -18,6 +18,7 @@ module.exports = class extends BaseGenerator {
   hasFeature: (feature: AngularFeature) => boolean = () => false;
   isStateFeature: (feature: AngularStateManagement) => boolean = () => false;
   templateFolder = '';
+  commonTemplateFolder = '';
 
   constructor(args: string | string[], opts: Generator.GeneratorOptions) {
     super(args, opts);
@@ -37,26 +38,8 @@ module.exports = class extends BaseGenerator {
         name: 'features',
         message: 'Which setups do you want to include?',
         choices: [
-          {
-            name: 'ESLint',
-            value: 'eslint',
-            checked: true,
-          },
-          {
-            name: 'CodingSans ESLint (only with ESLint)',
-            value: 'codingsans-eslint',
-            checked: true,
-          },
-          {
-            name: 'Prettier',
-            value: 'prettier',
-            checked: true,
-          },
-          {
-            name: 'Prettier VSCode settings (only with Prettier)',
-            value: 'prettier-vscode',
-            checked: true,
-          },
+          { name: 'ESLint', value: 'eslint', checked: true },
+          { name: 'Prettier', value: 'prettier', checked: true },
           { name: 'Jest Unit test runner', value: 'jest', checked: true },
           { name: 'Stryker Mutation test runner', value: 'stryker', checked: true },
           { name: 'State-management', value: 'state-management', checked: false },
@@ -74,18 +57,9 @@ module.exports = class extends BaseGenerator {
           name: 'stateManagement',
           message: 'Which state-management lib do you want to include?',
           choices: [
-            {
-              name: 'NGRX',
-              value: 'ngrx',
-            },
-            {
-              name: 'NGXS',
-              value: 'ngxs',
-            },
-            {
-              name: 'Akita',
-              value: 'akita',
-            },
+            { name: 'NGRX', value: 'ngrx' },
+            { name: 'Akita', value: 'akita' },
+            { name: 'NGXS', value: 'ngxs' },
           ],
         },
       ])) as AngularStateManagementAnswers;
@@ -94,6 +68,7 @@ module.exports = class extends BaseGenerator {
     this.isStateFeature = (stateManagement) => this.stateAnswers.stateManagement === stateManagement;
 
     this.templateFolder = this.templatePath('../../../templates/angular');
+    this.commonTemplateFolder = this.templatePath('../../../templates/common');
   }
 
   async installPackages(): Promise<void> {
@@ -182,20 +157,20 @@ module.exports = class extends BaseGenerator {
 
   async writing(): Promise<void> {
     if (this.hasFeature('eslint')) {
-      if (this.hasFeature('codingsans-eslint')) {
-        await this.extendJson(`${this.projectName}/.eslintrc.json`, {
-          overrides: [{ extends: ['@codingsans/eslint-config/typescript-recommended'] }],
-        });
-      }
+      await this.extendJson(`${this.projectName}/.eslintrc.json`, {
+        overrides: [{ extends: ['@codingsans/eslint-config/typescript-recommended'] }],
+      });
     }
 
     if (this.hasFeature('prettier')) {
-      if (this.hasFeature('prettier-vscode')) {
-        this.copyTemplate(
-          `${this.templateFolder}/settings.json`,
-          this.destinationPath(`${this.projectName}/.vscode/settings.json`),
-        );
-      }
+      this.copyTemplate(
+        `${this.commonTemplateFolder}/.prettierrc`,
+        this.destinationPath(`${this.projectName}/.prettierrc`),
+      );
+      this.copyTemplate(
+        `${this.commonTemplateFolder}/settings.json`,
+        this.destinationPath(`${this.projectName}/.vscode/settings.json`),
+      );
     }
 
     if (this.hasFeature('jest')) {
